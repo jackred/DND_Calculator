@@ -100,7 +100,7 @@ class Spells:
 
 def test():
     fig, ax = plt.subplots()
-    ax.set_title('DND spell damage comparison')
+    ax.set_title('DND lv 1 spell damage comparison')
     ax.set_ylabel('percentage')
     ax.set_xlabel('damage')
     burning_hands = Spells('Burning Hands', 1, [Damage(
@@ -184,9 +184,31 @@ def test():
     plt.show()
 
 
+def lv2():
+    fig, ax = plt.subplots()
+    ax.set_title('DND lv 2 spell damage comparison')
+    ax.set_ylabel('percentage')
+    ax.set_xlabel('damage')
+    fireball = Spells('Fireball', 3, [Damage(
+        8, 6, 'Fire', dc=True, dc_type='DEX', dc_fail=0.5,
+        upcast_per_level=1)])
+    cbd6_hit = Damage(3, 6, 'Random', hit=True, upcast_per_level=1)
+    cbd8 = Damage(2, 8, 'Random', hit=True, upcast_per_level=0,
+                  rebound_spell=['self', cbd6_hit], rebound=True)
+    chaos_ball = Spells('Chaos Ball', 3, [
+        Damage(2, 20, 'Random', dc=True, dc_type='DEX', upcast_per_level=0,
+               rebound_spell=[cbd8, cbd6_hit], rebound=True),
+        Damage(1, 6, 'Random', dc=True, dc_type='DEX', upcast_per_level=1)])
+    ax.plot(*fireball.roll_on_dc(upcast=0), label=fireball.name)
+    ax.plot(*chaos_ball.roll_on_dc(upcast=0, rebound=1),
+            label=chaos_ball.name)
+    ax.legend()
+    plt.show()
+
+
 def lv3():
     fig, ax = plt.subplots()
-    ax.set_title('DND lv 3spell damage comparison')
+    ax.set_title('DND lv 3 spell damage comparison')
     ax.set_ylabel('percentage')
     ax.set_xlabel('damage')
     fireball = Spells('Fireball', 3, [Damage(
@@ -207,4 +229,5 @@ def lv3():
 
 
 if __name__ == '__main__':
-    test()
+    #test()
+    lv3()

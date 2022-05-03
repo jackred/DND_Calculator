@@ -17,7 +17,7 @@ def lv_3():
     fig, ax = plt.subplots()
     ax.set_title('DND lv 3 spell damage comparison')
     ax.plot(*fireball, label='fireball--DEX 1/2--Fire')
-    # ax.plot(*chaosball, label="Kai's chaos ball")
+    ax.plot(*chaosball, label="Kai's chaos ball")
     ax.legend()
 
 
