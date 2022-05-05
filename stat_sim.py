@@ -80,7 +80,10 @@ def ask(asked=[(1, 3, 4), (3, 5, 6), (6, 6, 6),
     if method == '3d6':
         stat = proba_roll(3, 6, res_sum=res_sum, proba=proba)
     elif method == '4d6':
-        stat = proba_roll(4, 6, res_sum=res_sum, proba=proba)
+        if res_sum:
+            stat = proba_roll(4, 6, res_sum=res_sum, proba=proba, drop_low=True)
+        else:
+            stat = proba_roll(4, 6, res_sum=res_sum, proba=proba)
     else:
         sys.exit('wrong method for dice')
     if sum_all and res_sum:
