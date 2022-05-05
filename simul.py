@@ -1,15 +1,31 @@
 import d20
+from math import floor
+
+
+class Stat:
+    name_stats = ['str', 'int', 'cha', 'dex', 'wis', 'con']
+    default_value = 10
+
+    def __init__(self, mod=True, **kwargs):
+        if mod:
+            self.value = Stat(mod=False, **kwargs)
+            for atr in Stat.name_stats:
+                setattr(self, atr, floor((getattr(self.value, atr)-10)/2))
+
+        else:
+            for atr in Stat.name_stats:
+                setattr(self, atr,
+                        kwargs[atr] if atr in kwargs else Stat.default_value)
 
 
 class Entity:
-    def __init__(self, hp, level, ac, name,
-                 strength, constitution, dexterity):
+    def __init__(self, level, name,
+                 stats, ac=0, hp=0):
         self.hp = hp
         self.ac = ac
+        self.level = level
+        self.stats = Stat(**stats)
         self.name = name
-        self.str = strength
-        self.con = constitution
-        self.dex = dexterity
         self.proficiency = int((level-1)/4)+2
 
     def main_attack(self, target):
@@ -32,7 +48,7 @@ class Entity:
         return msg
 
     def to_hit(self, weapon):
-        roll = d20.roll(f"d20+{self.proficiency+self.str}")
+        roll = d20.roll(f"d20+{self.proficiency+self.stats.str}")
         return roll.total, roll.crit, roll.result
 
     def is_hit(self, to_hit):
@@ -47,19 +63,24 @@ class Entity:
 
 
 class Class(Entity):
-    def __init__(self, hp, level, name,
-                 strength, constitution, dexterity):
-        ac = 10 + dexterity
-        super().__init__(hp, level, ac, name,
-                         strength, constitution, dexterity)
+    def __init__(self, level, name,
+                 stats):
+        super().__init__(level, name,
+                         stats)
+
+    def compute_stat(self):
+        self.ac = 10 + self.stats.dex
 
 
 class Warrior(Class):
-    def __init__(self, level, name, strength, constitution, dexterity):
-        hp = 10 + 6*(level-1) + level * constitution
-        super().__init__(hp, level, name,
-                         strength, constitution, dexterity)
+    def __init__(self, level, name, stats):
+        super().__init__(level, name,
+                         stats)
+        self.compute_stat()
         self.weapons = []
+
+    def compute_stat(self):
+        self.hp = 10 + 6*(self.level-1) + self.level * self.stats.con
 
     def equip_weapon(self, weapon):
         self.weapons.append(weapon)
@@ -85,8 +106,8 @@ class Weapons:
 ls = Weapons("long-sword", 0, "1d8", "2d8", "slashing")
 gs = Weapons("great-sword", 0, "2d6", "4d6", "slashing")
 
-w1 = Warrior(1, 'jon', 3, 2, 1)
-w2 = Warrior(1, 'bob', 4, 0, 1)
+w1 = Warrior(1, 'jon', {'str': 16, 'con': 14, 'dex': 12})
+w2 = Warrior(1, 'bob', {'str': 18, 'con': 12})
 w1.equip_weapon(gs)
 w2.equip_weapon(ls)
 

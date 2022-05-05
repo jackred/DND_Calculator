@@ -23,7 +23,8 @@ def average_damages(damages):
 class Damage:
     def __init__(self, roll, damage, damage_type, fix=0, hit=False, dc=False,
                  dc_type='', dc_fail=0, turn_roll=0, target=1,
-                 upcast_per_level=0, rebound=False, rebound_spell=[]):
+                 upcast_per_level=0, rebound=False, rebound_spell=[],
+                 new=False):
         self.roll = roll
         self.damage = damage
         self.damage_type = damage_type
@@ -35,6 +36,7 @@ class Damage:
         self.target = target
         self.upcast_per_level = upcast_per_level
         self.rebound = rebound
+        self.new = new
         self.rebound_spell = []
         for i in rebound_spell:
             if i == 'self':
@@ -58,10 +60,16 @@ class Damage:
                                               turn=turn))
             new_d = average_damages(list(zip(*dmg_r)))
             for i in range(1, self.damage+1):
-                tmp = np.where(res[0] == (i+i))[0][0]
-                res[1][tmp] -= 1
+                idx = np.where(res[0] == (i+i))[0][0]
+                res[1][idx] -= 1
                 res[1] = np.append(res[1], new_d[1])
                 res[0] = np.append(res[0], (i+i)+new_d[0])
+                #  new rebound chaos ball
+                if self.new:
+                    idx = np.where(res[0] == (i+((10+i) % 20)))[0][0]
+                    res[1][idx] -= 1
+                    res[1] = np.append(res[1], new_d[1])
+                    res[0] = np.append(res[0], (i+((10+i) % 20))+new_d[0])
         print(res)
         return res[0], res[1] / res[1].sum()
 
@@ -101,7 +109,7 @@ class Spells:
 def test():
     fig, ax = plt.subplots()
     ax.set_title('DND lv 1 spell damage comparison')
-    ax.set_ylabel('percentage')
+    ax.set_ylabel('probability')
     ax.set_xlabel('damage')
     burning_hands = Spells('Burning Hands', 1, [Damage(
         3, 6, 'Fire', dc=True, dc_type='DEX', dc_fail=0.5,
@@ -187,7 +195,7 @@ def test():
 def lv2():
     fig, ax = plt.subplots()
     ax.set_title('DND lv 2 spell damage comparison')
-    ax.set_ylabel('percentage')
+    ax.set_ylabel('probability')
     ax.set_xlabel('damage')
     fireball = Spells('Fireball', 3, [Damage(
         8, 6, 'Fire', dc=True, dc_type='DEX', dc_fail=0.5,
@@ -209,7 +217,7 @@ def lv2():
 def lv3():
     fig, ax = plt.subplots()
     ax.set_title('DND lv 3 spell damage comparison')
-    ax.set_ylabel('percentage')
+    ax.set_ylabel('probability')
     ax.set_xlabel('damage')
     fireball = Spells('Fireball', 3, [Damage(
         8, 6, 'Fire', dc=True, dc_type='DEX', dc_fail=0.5,
@@ -221,9 +229,17 @@ def lv3():
         Damage(2, 20, 'Random', dc=True, dc_type='DEX', upcast_per_level=0,
                rebound_spell=[cbd8, cbd6_hit], rebound=True),
         Damage(1, 6, 'Random', dc=True, dc_type='DEX', upcast_per_level=1)])
+    chaos_ball_2 = Spells('Chaos Ball New', 3, [
+        Damage(2, 20, 'Random', dc=True, dc_type='DEX', upcast_per_level=0,
+               rebound_spell=[cbd8, cbd6_hit], rebound=True, new=True),
+        Damage(1, 6, 'Random', dc=True, dc_type='DEX', upcast_per_level=1)])
     ax.plot(*fireball.roll_on_dc(upcast=0), label=fireball.name)
     ax.plot(*chaos_ball.roll_on_dc(upcast=0, rebound=1),
+            label=chaos_ball.name+' 1 rebound')
+    ax.plot(*chaos_ball.roll_on_dc(upcast=0, rebound=0),
             label=chaos_ball.name)
+    ax.plot(*chaos_ball_2.roll_on_dc(upcast=0, rebound=1),
+            label=chaos_ball_2.name+' 1 rebound')
     ax.legend()
     plt.show()
 
