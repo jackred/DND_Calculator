@@ -1,5 +1,6 @@
 import d20
 from math import floor
+from abc import ABC, abstractmethod
 
 
 class Stat:
@@ -18,15 +19,21 @@ class Stat:
                         kwargs[atr] if atr in kwargs else Stat.default_value)
 
 
-class Entity:
+class Entity(ABC):
     def __init__(self, level, name,
                  stats, ac=0, hp=0):
         self.hp = hp
+        self.max_hp = hp
         self.ac = ac
         self.level = level
         self.stats = Stat(**stats)
         self.name = name
         self.proficiency = int((level-1)/4)+2
+        self.compute_attr()
+
+    @abstractmethod
+    def compute_attr():
+        pass
 
     def main_attack(self, target):
         if len(self.weapons) >= 0:
@@ -68,22 +75,22 @@ class Class(Entity):
         super().__init__(level, name,
                          stats)
 
-    def compute_stat(self):
+    def compute_attr(self):
         self.ac = 10 + self.stats.dex
+
+    def equip_weapon(self, weapon):
+        self.weapons.append(weapon)
 
 
 class Warrior(Class):
     def __init__(self, level, name, stats):
         super().__init__(level, name,
                          stats)
-        self.compute_stat()
         self.weapons = []
 
-    def compute_stat(self):
+    def compute_attr(self):
         self.hp = 10 + 6*(self.level-1) + self.level * self.stats.con
-
-    def equip_weapon(self, weapon):
-        self.weapons.append(weapon)
+        self.max_hp = self.hp
 
 
 class Weapons:
@@ -101,6 +108,43 @@ class Weapons:
         else:
             to_roll = self.damage
         return d20.roll(to_roll).total, self.elem
+
+
+# 0 = Common
+# 1 = Uncommon
+# 2 = Rare
+# 3 = Very rare
+# 4 = Legendary
+class Item:
+    def __init__(self, name, price, rarity,
+                 attunement=False, magic=False, consumable=False):
+        self.name = name
+        self.price = price
+        self.rarity = rarity
+        self.attunement = attunement
+        self.magic = magic
+        self.consumable = consumable
+
+
+class Consumable(Item, ABC):
+    def __init__(self, name, price, rarity, charge):
+        super().__init__(name, price, rarity, consumable=True)
+        self.charge = charge
+
+    @abstractmethod
+    def consume(self, target):
+        pass
+
+
+class Healing_Potion(Consumable):
+    def __init__(self):
+        super().__init__('Healing potion', 50, 0, 1)
+
+    def consume(self, target):
+        roll = d20.roll("2d4+2")
+        target.hp = min(target.hp+roll.total, target.max_hp)
+        return f"{target.name} has consumed a {self.name}" \
+            + f"and regained {roll} hp"
 
 
 ls = Weapons("long-sword", 0, "1d8", "2d8", "slashing")
