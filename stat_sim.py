@@ -81,7 +81,8 @@ def ask(asked=[(1, 3, 4), (3, 5, 6), (6, 6, 6),
         stat = proba_roll(3, 6, res_sum=res_sum, proba=proba)
     elif method == '4d6':
         if res_sum:
-            stat = proba_roll(4, 6, res_sum=res_sum, proba=proba, drop_low=True)
+            stat = proba_roll(4, 6, res_sum=res_sum, proba=proba,
+                              drop_low=True)
         else:
             stat = proba_roll(4, 6, res_sum=res_sum, proba=proba)
     else:
@@ -96,8 +97,8 @@ def ask(asked=[(1, 3, 4), (3, 5, 6), (6, 6, 6),
         else:
             res = [stat[1][np.where((stat[0] == i).all(axis=1))[0]]
                    for i in asked]
-        res = np.sum(res)
-        total = (sum(stat[1])*len(asked))
+        res = np.product(res)
+        total = (sum(stat[1]))**len(asked)
         print(res, 'chances out of', total)
         print(100*res/total, '%')
 
