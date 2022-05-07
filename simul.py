@@ -21,7 +21,7 @@ class Stat:
 
 class Entity(ABC):
     def __init__(self, level, name,
-                 stats, ac=0, hp=0):
+                 stats, race,  ac=0, hp=0):
         self.hp = hp
         self.max_hp = hp
         self.ac = ac
@@ -30,6 +30,7 @@ class Entity(ABC):
         self.name = name
         self.proficiency = int((level-1)/4)+2
         self.compute_attr()
+        race.add_attr(self)
 
     @abstractmethod
     def compute_attr():
@@ -71,9 +72,9 @@ class Entity(ABC):
 
 class Class(Entity):
     def __init__(self, level, name,
-                 stats):
+                 stats, race):
         super().__init__(level, name,
-                         stats)
+                         stats, race)
 
     def compute_attr(self):
         self.ac = 10 + self.stats.dex
@@ -83,14 +84,42 @@ class Class(Entity):
 
 
 class Warrior(Class):
-    def __init__(self, level, name, stats):
+    def __init__(self, level, name, stats, race):
         super().__init__(level, name,
-                         stats)
+                         stats, race)
         self.weapons = []
 
     def compute_attr(self):
+        super().compute_attr()
         self.hp = 10 + 6*(self.level-1) + self.level * self.stats.con
         self.max_hp = self.hp
+
+
+class Race(ABC):
+    race = 'not defined'
+    speed = 'not defined'
+    max_age = 'not defined'
+    size = 'not defined'
+
+    @classmethod
+    def add_attr(cls, entity):
+        entity.speed = cls.speed
+        entity.max_age = cls.max_age
+        entity.race = cls.race
+
+
+class Human(Race):
+    speed = 30
+    max_age = 100
+    race = 'Human'
+    size = 'M'
+
+
+class Half_Elf(Race):
+    speed = 30
+    max_age = 180
+    race = 'Half-elf'
+    size = 'M'
 
 
 class Weapons:
@@ -150,8 +179,8 @@ class Healing_Potion(Consumable):
 ls = Weapons("long-sword", 0, "1d8", "2d8", "slashing")
 gs = Weapons("great-sword", 0, "2d6", "4d6", "slashing")
 
-w1 = Warrior(1, 'jon', {'str': 16, 'con': 14, 'dex': 12})
-w2 = Warrior(1, 'bob', {'str': 18, 'con': 12})
+w1 = Warrior(1, 'jon', {'str': 16, 'con': 14, 'dex': 12}, Human)
+w2 = Warrior(1, 'bob', {'str': 18, 'con': 12}, Half_Elf)
 w1.equip_weapon(gs)
 w2.equip_weapon(ls)
 
