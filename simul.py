@@ -3,6 +3,11 @@ from math import floor
 from abc import ABC, abstractmethod
 
 
+###
+#
+#  Stat
+#
+###
 class Stat:
     name_stats = ['str', 'int', 'cha', 'dex', 'wis', 'con']
     default_value = 10
@@ -19,6 +24,59 @@ class Stat:
                         kwargs[atr] if atr in kwargs else Stat.default_value)
 
 
+###
+#
+#  Action
+#
+###
+class Action:
+    def __init__(self, cost='A', cost_value=1):
+        # "A" = Action
+        # "BA" = Bonus Action
+        # "R" = Reaction
+        # "M" = movement  (needed?)
+        self.cost = cost
+        self.cost_value = cost_value
+
+    def do(self, character, **kwargs):
+        if hasattr(character, 'fight'):
+            char_economy = getattr(character, self.cost)
+            if char_economy >= self.cost_value:
+                setattr(character, self.cost, char_economy - self.cost_value)
+                self.execute(character, **kwargs)
+        else:
+            "out of fight, TODO?"
+
+    @abstractmethod
+    def execute():
+        pass
+
+
+class Bonus_Action(Action):
+    def __init__(self, cost_value=1):
+        super().__init__('BA', cost_value)
+
+
+class Reaction(Action):
+    def __init__(self, cost_value=1):
+        super().__init__('R', cost_value)
+
+
+class Fight:
+    def __init__(self, character):
+        self.initiative = 0
+        self.position = (0, 0)
+        self.action = 1
+        self.bonus_action = 1
+        self.reaction = 1
+        self.movement = character.speed
+
+
+###
+#
+#  Entity
+#
+###
 class Entity(ABC):
     def __init__(self, level, name,
                  stats, race,  ac=0, hp=0):
@@ -30,6 +88,7 @@ class Entity(ABC):
         self.name = name
         self.proficiency = int((level-1)/4)+2
         self.compute_attr()
+        self.weapons = []
         race.add_attr(self)
 
     @abstractmethod
@@ -69,7 +128,13 @@ class Entity(ABC):
             msg += f"\n{self.name} is unconscious"
         return msg
 
+    def equip_weapon(self, weapon):
+        self.weapons.append(weapon)
 
+
+###
+#  Class
+###
 class Class(Entity):
     def __init__(self, level, name,
                  stats, race):
@@ -79,15 +144,14 @@ class Class(Entity):
     def compute_attr(self):
         self.ac = 10 + self.stats.dex
 
-    def equip_weapon(self, weapon):
-        self.weapons.append(weapon)
 
-
+###
+#  Warrior
+###
 class Warrior(Class):
     def __init__(self, level, name, stats, race):
         super().__init__(level, name,
                          stats, race)
-        self.weapons = []
 
     def compute_attr(self):
         super().compute_attr()
@@ -95,6 +159,11 @@ class Warrior(Class):
         self.max_hp = self.hp
 
 
+###
+#
+#  Race
+#
+###
 class Race(ABC):
     race = 'not defined'
     speed = 'not defined'
@@ -122,6 +191,10 @@ class Half_Elf(Race):
     size = 'M'
 
 
+###
+#  Weapons
+###
+# TODO : make an item
 class Weapons:
     def __init__(self, name, bonus, damage, crit_damage, elem):
         self.name = name
@@ -139,12 +212,17 @@ class Weapons:
         return d20.roll(to_roll).total, self.elem
 
 
-# 0 = Common
-# 1 = Uncommon
-# 2 = Rare
-# 3 = Very rare
-# 4 = Legendary
+###
+#
+#  Item
+#
+###
 class Item:
+    # 0 = Common
+    # 1 = Uncommon
+    # 2 = Rare
+    # 3 = Very rare
+    # 4 = Legendary
     def __init__(self, name, price, rarity,
                  attunement=False, magic=False, consumable=False):
         self.name = name
