@@ -30,36 +30,58 @@ class Stat:
 #
 ###
 class Action:
-    def __init__(self, cost='A', cost_value=1):
+    def __init__(self, execute, cost='action', cost_value=1):
         # "A" = Action
         # "BA" = Bonus Action
         # "R" = Reaction
         # "M" = movement  (needed?)
         self.cost = cost
         self.cost_value = cost_value
+        self.execute = execute
 
     def do(self, character, **kwargs):
         if hasattr(character, 'fight'):
-            char_economy = getattr(character, self.cost)
+            char_economy = getattr(character.fight, self.cost)
             if char_economy >= self.cost_value:
                 setattr(character, self.cost, char_economy - self.cost_value)
-                self.execute(character, **kwargs)
+                return self.execute(character, **kwargs)
         else:
-            "out of fight, TODO?"
-
-    @abstractmethod
-    def execute():
-        pass
+            return "out of fight, TODO?"
 
 
 class Bonus_Action(Action):
-    def __init__(self, cost_value=1):
-        super().__init__('BA', cost_value)
+    def __init__(self, execute, cost_value=1):
+        super().__init__('bonus_action', cost_value)
 
 
 class Reaction(Action):
-    def __init__(self, cost_value=1):
-        super().__init__('R', cost_value)
+    def __init__(self, execute, cost_value=1):
+        super().__init__('reaction', cost_value)
+
+
+def basic_attack(character, weapon, target):
+    to_hit, crit, expr = character.to_hit(weapon)
+    msg = f"{character.name} attacks {target.name}"
+    msg += f"\n{character.name} rolls {expr}"
+    if crit == 1 or target.is_hit(to_hit):
+        damage, elem = weapon.roll_damage(crit)
+        res = target.lose_hp(damage, elem)
+        msg += f"\n{character.name} has touched {target.name}"
+        msg += "\n" + res
+    else:
+        msg += f"\n{character.name} has missed {target.name}"
+    return msg
+
+
+attack_action = Action(basic_attack)
+
+
+# TODO: add delete object
+def consume(character, potion):
+    return potion.consume(character)
+
+
+consume_object = Action(consume)
 
 
 class Fight:
@@ -97,25 +119,12 @@ class Entity(ABC):
 
     def main_attack(self, target):
         if len(self.weapons) >= 0:
-            return self.attack(self.weapons[0], target)
+            return attack_action.do(self, weapon=self.weapons[0], target=target)
         else:
             return f"{self.name} has no weapon"
 
-    def attack(self, weapon, target):
-        to_hit, crit, expr = self.to_hit(weapon)
-        msg = f"{self.name} attacks {target.name}"
-        msg += f"\n{self.name} rolls {expr}"
-        if crit == 1 or target.is_hit(to_hit):
-            damage, elem = weapon.roll_damage(crit)
-            res = target.lose_hp(damage, elem)
-            msg += f"\n{self.name} has touched {target.name}"
-            msg += "\n" + res
-        else:
-            msg += f"\n{self.name} has missed {target.name}"
-        return msg
-
     def to_hit(self, weapon):
-        roll = d20.roll(f"d20+{self.proficiency+self.stats.str}")
+        roll = d20.roll(f"d20+{self.proficiency+self.stats.str+weapon.bonus}")
         return roll.total, roll.crit, roll.result
 
     def is_hit(self, to_hit):
@@ -261,7 +270,8 @@ w1 = Warrior(1, 'jon', {'str': 16, 'con': 14, 'dex': 12}, Human)
 w2 = Warrior(1, 'bob', {'str': 18, 'con': 12}, Half_Elf)
 w1.equip_weapon(gs)
 w2.equip_weapon(ls)
-
+w1.fight = Fight(w1)
+w2.fight = Fight(w2)
 
 while w1.hp >= 0 and w2.hp >= 0:
     print(w1.main_attack(w2))
