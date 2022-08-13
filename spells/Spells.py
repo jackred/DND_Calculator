@@ -11,9 +11,10 @@ DAMAGE_TYPES = ['Fire', 'Thunder', 'Cold', 'Lightning', 'Acid', 'Poison',
 
 def average_damages(damages):
     avg_d = np.sum(list(itertools.product(*damages[0])), axis=1)
-    avg_p = np.product(list(itertools.product(*damages[1])), axis=1)
+    p = list(itertools.product(*damages[1]))
+    avg_p = np.product(p, axis=1)
     new_d = np.unique(avg_d)
-    new_p = [sum(avg_p[avg_d == new_d[i]]) for i in range(len(new_d))]
+    new_p = np.array([sum(avg_p[avg_d == new_d[i]]) for i in range(len(new_d))])
     return new_d, new_p
 
 
